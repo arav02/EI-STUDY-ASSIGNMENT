@@ -1,0 +1,114 @@
+from datetime import datetime
+from typing import Optional
+
+
+# Behavioral Pattern - Memento Pattern
+class TaskMemento:
+    def __init__(self, task):
+        self.task_state = task.__dict__.copy()
+
+
+class Task:
+    def __init__(self, description, due_date=None):
+        self.description = description
+        self.completed = False
+        self.due_date = due_date
+
+    def mark_completed(self):
+        self.completed = True
+
+    def mark_pending(self):
+        self.completed = False
+
+    def set_due_date(self, due_date):
+        self.due_date = due_date
+
+    def __str__(self):
+        status = "Completed" if self.completed else "Pending"
+        return f"{self.description} - {status}, Due: {self.due_date}"
+
+
+# Creational Pattern - Builder Pattern
+class TaskBuilder:
+    def __init__(self, description):
+        self.task = Task(description)
+
+    def set_due_date(self, due_date):
+        self.task.set_due_date(due_date)
+        return self
+
+    def build(self):
+        return self.task
+
+
+class TaskManager:
+    def __init__(self):
+        self.tasks = []
+        self.mementos = []
+
+    def add_task(self, task):
+        self.tasks.append(task)
+        self.save_state()
+
+    def mark_completed(self, description):
+        task = next((t for t in self.tasks if t.description == description), None)
+        if task:
+            task.mark_completed()
+            self.save_state()
+
+    def delete_task(self, description):
+        self.tasks = [t for t in self.tasks if t.description != description]
+        self.save_state()
+
+    def undo(self):
+        if len(self.mementos) > 1:
+            self.mementos.pop()
+            self.tasks = [Task(**state) for state in self.mementos[-1]]
+
+    def redo(self):
+        if len(self.mementos) > 1:
+            self.mementos.pop()
+            self.tasks = [Task(**state) for state in self.mementos[-1]]
+
+    def save_state(self):
+        self.mementos.append([TaskMemento(task).task_state for task in self.tasks])
+
+    def view_tasks(self, filter_type='all'):
+        if filter_type == 'completed':
+            tasks_to_display = [task for task in self.tasks if task.completed]
+        elif filter_type == 'pending':
+            tasks_to_display = [task for task in self.tasks if not task.completed]
+        else:
+            tasks_to_display = self.tasks
+
+        return [str(task) for task in tasks_to_display]
+
+
+if __name__ == "__main__":
+    # Example usage
+    task_manager = TaskManager()
+
+    task1 = TaskBuilder("Buy groceries").set_due_date("2023-09-20").build()
+    task2 = TaskBuilder("Finish homework").build()
+
+    task_manager.add_task(task1)
+    task_manager.add_task(task2)
+
+    print("Initial Tasks:")
+    print(task_manager.view_tasks())
+
+    task_manager.mark_completed("Buy groceries")
+    task_manager.delete_task("Finish homework")
+
+    print("\nTasks after marking 'Buy groceries' as completed and deleting 'Finish homework':")
+    print(task_manager.view_tasks())
+
+    task_manager.undo()
+
+    print("\nTasks after undoing the last action:")
+    print(task_manager.view_tasks())
+
+    task_manager.redo()
+
+    print("\nTasks after redoing the last action:")
+    print(task_manager.view_tasks())
