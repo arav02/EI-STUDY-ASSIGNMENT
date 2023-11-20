@@ -1,0 +1,107 @@
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit
+
+# Behavioral Pattern - Observer Pattern
+class ChatRoom:
+    def __init__(self, room_id):
+        self.room_id = room_id
+        self.users = set()
+        self.messages = []
+
+    def add_user(self, username):
+        self.users.add(username)
+
+    def remove_user(self, username):
+        self.users.remove(username)
+
+    def send_message(self, username, message):
+        self.messages.append({'username': username, 'message': message})
+
+    def get_active_users(self):
+        return list(self.users)
+
+    def get_chat_history(self):
+        return self.messages
+
+
+# Creational Pattern - Singleton
+class ChatRoomManager:
+    _instance = None
+
+    def __new__(cls):
+        if not cls._instance:
+            cls._instance = super(ChatRoomManager, cls).__new__(cls)
+            cls._instance.chat_rooms = {}
+        return cls._instance
+
+    def create_or_get_chat_room(self, room_id):
+        if room_id not in self.chat_rooms:
+            self.chat_rooms[room_id] = ChatRoom(room_id)
+        return self.chat_rooms[room_id]
+
+
+# Structural Pattern - Adapter Pattern
+class SocketIOAdapter:
+    def __init__(self, socketio, app):
+        self.socketio = socketio
+        self.app = app
+
+    def run(self):
+        self.socketio.run(self.app, debug=True)
+
+
+app = Flask(__name__)
+socketio = SocketIO(app)
+
+# Initialize the Singleton instance
+chat_room_manager = ChatRoomManager()
+
+# Structural Pattern - Adapter Pattern
+socketio_adapter = SocketIOAdapter(socketio, app)
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@socketio.on('join')
+def handle_join(data):
+    username = data['username']
+    room_id = data['room_id']
+
+    # Creational Pattern - Singleton
+    chat_room = chat_room_manager.create_or_get_chat_room(room_id)
+    chat_room.add_user(username)
+
+    emit('update_users', {'users': chat_room.get_active_users()}, room=room_id)
+    emit('update_messages', {'messages': chat_room.get_chat_history()}, room=room_id)
+    emit('system_message', {'message': f'{username} has joined the chat.'}, room=room_id)
+
+
+@socketio.on('leave')
+def handle_leave(data):
+    username = data['username']
+    room_id = data['room_id']
+
+    chat_room = chat_room_manager.create_or_get_chat_room(room_id)
+    chat_room.remove_user(username)
+
+    emit('update_users', {'users': chat_room.get_active_users()}, room=room_id)
+    emit('system_message', {'message': f'{username} has left the chat.'}, room=room_id)
+
+
+@socketio.on('message')
+def handle_message(data):
+    username = data['username']
+    room_id = data['room_id']
+    message = data['message']
+
+    chat_room = chat_room_manager.create_or_get_chat_room(room_id)
+    chat_room.send_message(username, message)
+
+    emit('update_messages', {'messages': chat_room.get_chat_history()}, room=room_id)
+
+
+# Run the application using the adapter
+socketio_adapter.run()
