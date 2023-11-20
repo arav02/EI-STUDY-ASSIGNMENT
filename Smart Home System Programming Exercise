@@ -1,0 +1,165 @@
+# Behavioral Pattern - Observer Pattern
+class Observer:
+    def update(self, device):
+        pass
+
+class DeviceObserver(Observer):
+    def update(self, device):
+        # Update logic for the device status change
+        pass
+
+# Creational Pattern - Factory Method
+class DeviceFactory:
+    def create_device(self, device_type, device_id):
+        pass
+
+# Structural Pattern - Proxy Pattern
+class DeviceProxy:
+    def __init__(self, device):
+        self._device = device
+
+    def turn_on(self):
+        # Proxy logic to control access to turn on
+        pass
+
+    def turn_off(self):
+        # Proxy logic to control access to turn off
+        pass
+
+    def set_schedule(self, time, command):
+        # Proxy logic to control access to set schedule
+        pass
+
+    def add_trigger(self, condition, action):
+        # Proxy logic to control access to add trigger
+        pass
+
+# Concrete classes for smart devices
+class Light(DeviceObserver):
+    def __init__(self, device_id):
+        self.device_id = device_id
+        self.status = 'off'
+
+    def turn_on(self):
+        self.status = 'on'
+        print(f"Light {self.device_id} is On.")
+
+    def turn_off(self):
+        self.status = 'off'
+        print(f"Light {self.device_id} is Off.")
+
+    def set_schedule(self, time, command):
+        # Implement scheduling logic for lights
+        pass
+
+    def add_trigger(self, condition, action):
+        # Implement trigger logic for lights
+        pass
+
+class Thermostat(DeviceObserver):
+    def __init__(self, device_id):
+        self.device_id = device_id
+        self.temperature = 70
+
+    def set_temperature(self, temperature):
+        self.temperature = temperature
+        print(f"Thermostat is set to {self.temperature} degrees.")
+
+    def set_schedule(self, time, command):
+        # Implement scheduling logic for thermostats
+        pass
+
+    def add_trigger(self, condition, action):
+        # Implement trigger logic for thermostats
+        pass
+
+class DoorLock(DeviceObserver):
+    def __init__(self, device_id):
+        self.device_id = device_id
+        self.status = 'locked'
+
+    def unlock(self):
+        self.status = 'unlocked'
+        print(f"Door is Unlocked.")
+
+    def lock(self):
+        self.status = 'locked'
+        print(f"Door is Locked.")
+
+    def set_schedule(self, time, command):
+        # Implement scheduling logic for door locks
+        pass
+
+    def add_trigger(self, condition, action):
+        # Implement trigger logic for door locks
+        pass
+
+# Concrete Factory for creating instances of smart devices
+class ConcreteDeviceFactory(DeviceFactory):
+    def create_device(self, device_type, device_id):
+        if device_type == 'light':
+            return Light(device_id)
+        elif device_type == 'thermostat':
+            return Thermostat(device_id)
+        elif device_type == 'door':
+            return DoorLock(device_id)
+
+# Smart Home System
+class SmartHomeSystem:
+    def __init__(self, devices):
+        self.devices = {}
+        self.device_factory = ConcreteDeviceFactory()
+
+        for device_info in devices:
+            device_id = device_info['id']
+            device_type = device_info['type']
+            device = self.device_factory.create_device(device_type, device_id)
+            self.devices[device_id] = device
+
+    def get_device(self, device_id):
+        return self.devices.get(device_id)
+
+    def execute_command(self, command):
+        # Parse and execute the command
+        pass
+
+    def send_status_report(self):
+        # Generate and return the status report
+        status_report = ""
+        for device_id, device in self.devices.items():
+            if isinstance(device, Light):
+                status_report += f"Light {device_id} is {device.status}. "
+            elif isinstance(device, Thermostat):
+                status_report += f"Thermostat is set to {device.temperature} degrees. "
+            elif isinstance(device, DoorLock):
+                status_report += f"Door is {device.status}. "
+        return status_report
+
+    def get_scheduled_tasks(self):
+        # Return the scheduled tasks
+        pass
+
+    def get_automated_triggers(self):
+        # Return the automated triggers
+        pass
+
+# Client code
+if __name__ == "__main__":
+    # Initialize Smart Home System with devices
+    devices_info = [
+        {'id': 1, 'type': 'light', 'status': 'off'},
+        {'id': 2, 'type': 'thermostat', 'temperature': 70},
+        {'id': 3, 'type': 'door', 'status': 'locked'}
+    ]
+
+    smart_home_system = SmartHomeSystem(devices_info)
+
+    # Execute commands
+    commands = ['turnOn(1)', 'setSchedule(2, "06:00", "Turn On")', 'addTrigger("temperature", ">", 75, "turnOff(1)")']
+    for command in commands:
+        smart_home_system.execute_command(command)
+
+    # Display status report, scheduled tasks, and automated triggers
+    print(smart_home_system.send_status_report())
+    print(f"Scheduled Tasks: {smart_home_system.get_scheduled_tasks()}")
+    print(f"Automated Triggers: {smart_home_system.get_automated_triggers()}")
